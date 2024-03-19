@@ -10,10 +10,7 @@
     <div class="full-body-container">
         <div class="top-text">
             <div class="google-colors">
-                <h1 id="google-4">🎥</h1>
-                <h1 id="google-3">movie</h1>
-                <h1 id="google-0-1">search</h1>
-                <h1 id="google-0-2">🎥</h1>
+                <h1 id="google-3">🎥 mediaverse 🎥</h1>
             </div>
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
@@ -33,12 +30,16 @@
 
     <script>
 
-        function answerBoxTemplate(title, titleDesc, rating) {
-            return `<div class=''>
-                <h3 class='episode-title'>${title}</h3>
-                <p class='episode-desc'>${titleDesc}</p>
-                <p class='episode-rating'>IMDB Rating: ${rating}</p>
-            </div>`
+        function answerBoxTemplate(title, titleDesc, rating, imageUrl) {
+            const placeholderImage = '/static/images/sample_poster.png'; // Path to the placeholder image
+            return `<div class='answer-content'>
+                <div class='text-content'>
+                    <h3 class='episode-title'>${title}</h3>
+                    <p class='episode-desc'>${titleDesc}</p>
+                    <p class='episode-rating'>IMDB Rating: ${rating}</p>
+                </div>
+                <img src='${placeholderImage}' alt='Movie Poster' class='movie-image'/>
+            </div>`;
         }
 
         function sendFocus() {
@@ -56,7 +57,9 @@
                 .then((data) => data.forEach(row => {
 
                     let tempDiv = document.createElement("div")
-                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.descr, row.imdb_rating)
+                    // Modify this part to include the imageUrl in your data
+                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.descr, row.imdb_rating, row.imageUrl);
+
                     document.getElementById("answer-box").appendChild(tempDiv)
                 }));
 
