@@ -17,9 +17,15 @@
             </div>
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
-                <input placeholder="Movie Search" id="filter-text-val" onkeyup="filterText()">
+                <input placeholder="Type a genre here" id="filter-text-val" onkeyup="filterText()">
             </div>
         </div>
+        <div class="slider-container">
+            <label for="ratingSlider">Rating: <span id="sliderValue">2.5</span>/5.0</label>
+            <input type="range" id="ratingSlider" name="rating" min="0.0" max="5.0" value="2.5" step="0.1"
+                oninput="updateSliderValue(this.value)">
+        </div>
+
         <div id="answer-box">
 
         </div>
@@ -37,6 +43,9 @@
 
         function sendFocus() {
             document.getElementById('filter-text-val').focus()
+        }
+        function updateSliderValue(value) {
+            document.getElementById('sliderValue').innerText = value;
         }
 
         function filterText() {
