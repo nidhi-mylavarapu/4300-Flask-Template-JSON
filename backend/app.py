@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
+import ast
 
 # ROOT_PATH for linking with all your files.
 # Feel free to use a config.py or settings.py with a global export variable
@@ -38,6 +39,36 @@ def json_search(query):
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 
+
+import math
+
+def tokenize(text):
+    if text is None: 
+        return ""
+    return text.lower().split()
+
+def build_vocabulary(descriptions):
+    vocab = set()
+    for description in descriptions:
+        vocab.update(tokenize(description))
+    return list(vocab)
+
+def vectorize(text, vocabulary):
+    word_counts = {word: 0 for word in vocabulary}
+    for word in tokenize(text):
+        if word in word_counts:
+            word_counts[word] += 1
+    return [word_counts[word] for word in vocabulary]
+
+def cosine_similarity(vec1, vec2):
+    dot_product = sum(v1 * v2 for v1, v2 in zip(vec1, vec2))
+    magnitude1 = math.sqrt(sum(v**2 for v in vec1))
+    magnitude2 = math.sqrt(sum(v**2 for v in vec2))
+    if magnitude1 == 0 or magnitude2 == 0:
+        return 0  
+    return dot_product / (magnitude1 * magnitude2)
+
+
 @app.route("/")
 def home():
     return render_template('base.html',title="sample html")
@@ -45,7 +76,24 @@ def home():
 @app.route("/episodes")
 def episodes_search():
     text = request.args.get("title")
-    return json_search(text)
+    query= request.args.get("query")
+    json_text= json.loads((json_search(text)))
+    overviews=[]
+    for movie in json_text: 
+        overviews.append(movie['overview'])
+    vocabulary = build_vocabulary(overviews + [query])
+    movie_vectors = [vectorize(desc, vocabulary) for desc in overviews]
+    user_vector = vectorize(query, vocabulary)
+    similarities = {desc: cosine_similarity(user_vector, movie_vector) for desc, movie_vector in zip(overviews, movie_vectors)}
+    sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+    print(len(sorted_similarities))
+    print("before")
+    top_50_percent = sorted_similarities[:len(sorted_similarities) // 2]
+    print(len(top_50_percent))
+    print("after")
+    top_descriptions_set = set(desc for desc, _ in top_50_percent)
+    filtered_movies = [movie for movie in json_text if movie["overview"] in top_descriptions_set]
+    return filtered_movies
 
 @app.route('/genre_suggestions')
 def genre_suggestions():
@@ -62,3 +110,4 @@ def genre_suggestions():
 
 if 'DB_NAME' not in os.environ:
     app.run(debug=True,host="0.0.0.0",port=5000)
+
