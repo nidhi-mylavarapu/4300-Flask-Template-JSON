@@ -1,11 +1,11 @@
 import json
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
 
-# ROOT_PATH for linking with all your files. 
+# ROOT_PATH for linking with all your files.
 # Feel free to use a config.py or settings.py with a global export variable
 os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
 
@@ -46,6 +46,19 @@ def home():
 def episodes_search():
     text = request.args.get("title")
     return json_search(text)
+
+@app.route('/genre_suggestions')
+def genre_suggestions():
+    query = request.args.get('query', '').lower()
+    genres = set()
+
+    for item in data:
+        genre_list = json.loads(item['genres'].replace("'", "\""))
+        for genre in genre_list:
+            if query in genre['name'].lower():
+                genres.add(genre['name'])
+
+    return jsonify(list(genres))
 
 if 'DB_NAME' not in os.environ:
     app.run(debug=True,host="0.0.0.0",port=5000)

@@ -6,27 +6,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap"
     rel="stylesheet">
 
-<body>
-    <div class="full-body-container">
-        <div class="top-text">
-            <div class="google-colors">
-                <h1 id="google-3">🎥 mediaverse 🎥</h1>
+    <body>
+        <div class="full-body-container">
+            <div class="top-text">
+                <div class="google-colors">
+                    <h1 id="google-3">🎥 mediaverse 🎥</h1>
+                </div>
+                <div class="input-box-container">
+                    <div class="input-box" onclick="sendFocus()" style="position: relative;">
+                        <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                        <input placeholder="Input Liked Genres" id="filter-text-val-liked">
+                        <div id="suggestions-liked" class="suggestions-dropdown"></div>
+                    </div>
+                    <div class="input-box" onclick="sendFocus()" style="position: relative;">
+                        <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                        <input placeholder="Input Disliked Genres" id="filter-text-val-disliked">
+                        <div id="suggestions-disliked" class="suggestions-dropdown"></div>
+                    </div>
+                    <button id="search-button" class="enter-btn" type="button">Enter</button>
+                </div>
             </div>
-            <div class="input-box" onclick="sendFocus()">
-                <img src="{{ url_for('static', filename='images/mag.png') }}" />
-                <input placeholder="Type a genre here" id="filter-text-val" onkeyup="filterText()">
+            <div class="slider-container">
+                <label for="ratingSlider">Rating: <span id="sliderValue">2.5</span>/5.0</label>
+                <input type="range" id="ratingSlider" name="rating" min="0.0" max="5.0" value="2.5" step="0.1"
+                    oninput="updateSliderValue(this.value)">
+            </div>
+
+            <div id="answer-box">
+
             </div>
         </div>
-        <div class="slider-container">
-            <label for="ratingSlider">Rating: <span id="sliderValue">2.5</span>/5.0</label>
-            <input type="range" id="ratingSlider" name="rating" min="0.0" max="5.0" value="2.5" step="0.1"
-                oninput="updateSliderValue(this.value)">
-        </div>
-
-        <div id="answer-box">
-
-        </div>
-    </div>
+    </body>
 
     <script>
 
@@ -49,21 +59,96 @@
             document.getElementById('sliderValue').innerText = value;
         }
 
+        document.getElementById('search-button').addEventListener('click', filterText);
+
         function filterText() {
             document.getElementById("answer-box").innerHTML = ""
-            console.log(document.getElementById("filter-text-val").value)
-            fetch("/episodes?" + new URLSearchParams({ title: document.getElementById("filter-text-val").value }).toString())
+            const searchText = document.getElementById("filter-text-val-liked").value;
+            fetch("/episodes?" + new URLSearchParams({ title: searchText }).toString())
                 .then((response) => response.json())
                 .then((data) => data.forEach(row => {
 
                     let tempDiv = document.createElement("div")
-                    // Modify this part to include the imageUrl in your data
                     tempDiv.innerHTML = answerBoxTemplate(row.title, row.descr, row.imdb_rating, row.imageUrl);
 
                     document.getElementById("answer-box").appendChild(tempDiv)
                 }));
 
         }
+
+        document.querySelectorAll('.input-box input').forEach(input => {
+        input.addEventListener('blur', function(event) {
+            setTimeout(() => {
+                document.getElementById(this.id + '-suggestions').style.display = 'none';
+            }, 100);
+        });
+    });
+
+    function selectGenre(value, dropdownId) {
+        document.getElementById(dropdownId.replace('suggestions-', 'filter-text-val-')).value = value;
+        document.getElementById(dropdownId).style.display = 'none';
+    }
+
+    function showSuggestions(value, dropdownId) {
+        if (value.length === 0) {
+            document.getElementById(dropdownId).innerHTML = '';
+            document.getElementById(dropdownId).style.display = 'none';
+            return;
+        }
+
+        fetch("/genre_suggestions?" + new URLSearchParams({ query: value }).toString())
+            .then(response => response.json())
+            .then(data => {
+                let suggestions = data.map(genre => {
+                    return `<div onclick="event.stopPropagation(); selectGenre('${genre}', '${dropdownId}')">${genre}</div>`;
+                }).join('');
+                document.getElementById(dropdownId).innerHTML = suggestions;
+                document.getElementById(dropdownId).style.display = 'block';
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    document.getElementById('filter-text-val-liked').addEventListener('input', function() {
+        showSuggestions(this.value, 'suggestions-liked');
+    });
+
+    document.getElementById('filter-text-val-disliked').addEventListener('input', function() {
+        showSuggestions(this.value, 'suggestions-disliked');
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        document.addEventListener('click', function (e) {
+            if (!e.target.matches('.input-box *')) {
+                hideAllSuggestions();
+            }
+        });
+
+        document.getElementById('filter-text-val-liked').addEventListener('input', function() {
+            showSuggestions(this.value, 'suggestions-liked');
+        });
+
+        document.getElementById('filter-text-val-disliked').addEventListener('input', function() {
+            showSuggestions(this.value, 'suggestions-disliked');
+        });
+
+        function hideAllSuggestions() {
+            document.querySelectorAll('.suggestions-dropdown').forEach(function (dropdown) {
+                dropdown.style.display = 'none';
+            });
+        }
+
+        function showSuggestions(value, dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (value.length > 0) {
+                dropdown.innerHTML = '<div></div>';
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+    });
 
     </script>
 </body>
