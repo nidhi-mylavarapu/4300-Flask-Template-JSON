@@ -119,7 +119,7 @@ def episodes_search():
     query= request.args.get("query")
     print("before")
     json_text= json.loads((filter_movies_by_genre(text)))
-    overviews = [overview['title'] if overview['title'] is not None else "" for overview in json_text]
+    overviews = [overview['overview'] if overview['overview'] is not None else "" for overview in json_text]
     texts = overviews + ([query] if query is not None else [''])
     vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = vectorizer.fit_transform(texts)
