@@ -5,6 +5,8 @@ from flask_cors import CORS
 from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
 import ast
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import linear_kernel
 
 # ROOT_PATH for linking with all your files.
 # Feel free to use a config.py or settings.py with a global export variable
@@ -38,9 +40,37 @@ def json_search(query):
     matches_filtered = matches[['title', 'overview', 'vote_average']]  # Adjusted to match relevant fields in the new JSON
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
+def genre_search(genre): 
+    matches = movies_df[movies_df['genres'].apply(lambda g: genre.lower() in (genre_name.lower() for genre_name in g))]
+    matches_filtered = matches[['title', 'overview', 'vote_average']]    
+    matches_filtered_json = matches_filtered.to_json(orient='records')
+    return matches_filtered_json
+def filter_movies_by_genre(genre):
+    def is_genre_present(genres_str, genre):
+        try:
+            genres_list = ast.literal_eval(genres_str)
+            for genre_dict in genres_list:
+                if genre.lower() == genre_dict['name'].lower():
+                    return True
+        except ValueError:
+            return False
+        return False
 
+    matches = movies_df[movies_df['genres'].apply(lambda g: is_genre_present(g, genre))]
+    matches_filtered = matches[['title', 'overview', 'vote_average']]    
+    matches_filtered_json = matches_filtered.to_json(orient='records')
+    return matches_filtered_json
 
 import math
+def compute_similarities(overviews, query):
+    combined_texts = overviews + [query]    
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(combined_texts)    
+    cosine_similarities = linear_kernel(tfidf_matrix[-1], tfidf_matrix[:-1]).flatten()    
+    similarity_scores = [(score, idx) for idx, score in enumerate(cosine_similarities)]
+    similarity_scores = sorted(similarity_scores, reverse=True)
+    top_matches = similarity_scores[:50]  
+    return top_matches
 
 def tokenize(text):
     if text is None: 
@@ -67,6 +97,16 @@ def cosine_similarity(vec1, vec2):
     if magnitude1 == 0 or magnitude2 == 0:
         return 0  
     return dot_product / (magnitude1 * magnitude2)
+def genresuggests(genre): 
+    genres = set()
+    for item in data:
+        genre_list = json.loads(item['genres'].replace("'", "\""))
+        for genre in genre_list:
+            if genre in genre['name'].lower():
+                genres.add(genre['name'])
+
+    return jsonify(list(genres))
+
 
 
 @app.route("/")
@@ -77,23 +117,35 @@ def home():
 def episodes_search():
     text = request.args.get("title")
     query= request.args.get("query")
-    json_text= json.loads((json_search(text)))
-    overviews=[]
-    for movie in json_text: 
-        overviews.append(movie['overview'])
-    vocabulary = build_vocabulary(overviews + [query])
-    movie_vectors = [vectorize(desc, vocabulary) for desc in overviews]
-    user_vector = vectorize(query, vocabulary)
-    similarities = {desc: cosine_similarity(user_vector, movie_vector) for desc, movie_vector in zip(overviews, movie_vectors)}
-    sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
-    print(len(sorted_similarities))
     print("before")
-    top_50_percent = sorted_similarities[:len(sorted_similarities) // 2]
-    print(len(top_50_percent))
-    print("after")
-    top_descriptions_set = set(desc for desc, _ in top_50_percent)
-    filtered_movies = [movie for movie in json_text if movie["overview"] in top_descriptions_set]
+    json_text= json.loads((filter_movies_by_genre(text)))
+    overviews = [overview['title'] if overview['title'] is not None else "" for overview in json_text]
+    texts = overviews + ([query] if query is not None else [''])
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(texts)
+    cosine_similarities = linear_kernel(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
+    movie_scores = list(enumerate(cosine_similarities))
+    sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)
+    top_half_movie_indices = [index for index, score in sorted_movie_scores[:len(sorted_movie_scores) // 2]]
+    filtered_movies = [json_text[index] for index in top_half_movie_indices]
     return filtered_movies
+
+
+    # overviews=[]
+    # for movie in json_text: 
+    #     overviews.append(movie['overview'])
+    
+    # vocabulary = build_vocabulary(overviews + [query])
+    # movie_vectors = [vectorize(desc, vocabulary) for desc in overviews]
+    # user_vector = vectorize(query, vocabulary)
+    # similarities = {desc: cosine_similarity(user_vector, movie_vector) for desc, movie_vector in zip(overviews, movie_vectors)}
+    # sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+    # print(len(sorted_similarities))
+    # top_50_percent = sorted_similarities[:len(sorted_similarities) // 2]
+    # print(len(top_50_percent))
+    # top_descriptions_set = set(desc for desc, _ in top_50_percent)
+    # filtered_movies = [movie for movie in json_text if movie["overview"] in top_descriptions_set]
+    # return filtered_movies
 
 @app.route('/genre_suggestions')
 def genre_suggestions():
