@@ -28,6 +28,11 @@
                     <input placeholder="Input Query/Keywords" id="query-keywords">
                     <div id="suggestions-query" class="suggestions-dropdown"></div>
                 </div>
+                <div class="input-box" onclick="sendFocus()" style="position: relative;">
+                    <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                    <input placeholder="Input Query/REVIEW Keywords" id="query-keywords">
+                    <div id="suggestions-query" class="suggestions-dropdown"></div>
+                </div>
                 <button id="search-button" class="enter-btn" type="button">Enter</button>
             </div>
         </div>
