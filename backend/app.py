@@ -7,6 +7,14 @@ import pandas as pd
 import ast
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import classification_report
+import numpy as np
+
+
 
 # ROOT_PATH for linking with all your files.
 # Feel free to use a config.py or settings.py with a global export variable
@@ -30,14 +38,8 @@ CORS(app)
 
 # Sample search using json with pandas
 def json_search(query):
-    # matches = []
-    # merged_df = pd.merge(episodes_df, reviews_df, left_on='id', right_on='id', how='inner')
-    # matches = merged_df[merged_df['title'].str.lower().str.contains(query.lower())]
-    # matches_filtered = matches[['title', 'descr', 'imdb_rating']]
-    # matches_filtered_json = matches_filtered.to_json(orient='records')
-    # return matches_filtered_json
     matches = movies_df[movies_df['title'].str.lower().str.contains(query.lower()) | movies_df['original_title'].str.lower().str.contains(query.lower())]
-    matches_filtered = matches[['title', 'overview', 'vote_average']]  # Adjusted to match relevant fields in the new JSON
+    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews']]  # Adjusted to match relevant fields in the new JSON
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 def genre_search(genre): 
@@ -57,7 +59,7 @@ def filter_movies_by_genre(genre):
         return False
 
     matches = movies_df[movies_df['genres'].apply(lambda g: is_genre_present(g, genre))]
-    matches_filtered = matches[['title', 'overview', 'vote_average']]    
+    matches_filtered = matches[['title', 'overview', 'vote_average','reviews']]    
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 
@@ -108,44 +110,75 @@ def genresuggests(genre):
     return jsonify(list(genres))
 
 
+train_data = pd.read_csv('train.tsv.zip', sep='\t')
+train_data['full_sentence'] = train_data.groupby('SentenceId')['Phrase'].transform(lambda x: ' '.join(x))
+train_data = train_data.drop_duplicates('SentenceId').reset_index(drop=True)
+
+model = make_pipeline(TfidfVectorizer(stop_words='english'), MultinomialNB())
+model.fit(train_data['full_sentence'], train_data['Sentiment'])
+
+def classify_and_score_reviews(json_data):
+    movies_df = pd.read_json(json_data)
+    results = []
+    for index, row in movies_df.iterrows():
+        movie_reviews = row['reviews']
+        if movie_reviews:
+            sentiments = model.predict(movie_reviews)
+            if len(sentiments) > 0:
+                average_sentiment = np.mean(sentiments)
+                results.append((row['title'], average_sentiment))
+            else:
+                results.append((row['title'], None))
+        else:
+            results.append((row['title'], None))
+            
+    return dict(results)
+
 
 @app.route("/")
 def home():
     return render_template('base.html',title="sample html")
 
+def compute_cosine_similarities(texts):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(texts)
+    cosine_similarities = linear_kernel(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
+    return cosine_similarities
+
+
 @app.route("/episodes")
 def episodes_search():
     text = request.args.get("title")
     query= request.args.get("query")
-    print("before")
-    json_text= json.loads((filter_movies_by_genre(text)))
+    review=request.args.get("review")
+    print("Reivew", review)
+    movies_df = pd.read_json('init.json')
+
+    pure_json= filter_movies_by_genre(text)
+    json_text= json.loads(pure_json)
+    sentiment_scores = classify_and_score_reviews(pure_json)
+
     overviews = [overview['overview'] if overview['overview'] is not None else "" for overview in json_text]
     texts = overviews + ([query] if query is not None else [''])
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform(texts)
-    cosine_similarities = linear_kernel(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
-    movie_scores = list(enumerate(cosine_similarities))
-    sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)
-    top_half_movie_indices = [index for index, score in sorted_movie_scores[:len(sorted_movie_scores) // 2]]
-    filtered_movies = [json_text[index] for index in top_half_movie_indices]
+    query_sim= compute_cosine_similarities(texts)
+    reviews= [str(text['reviews']) if text['reviews'] is not None else "" for text in json_text]
+    review_text= reviews+([review] if review is not None else [''])
+    reviews_similarities=compute_cosine_similarities(review_text)
+    cosine_similarity=None
+    if review != "" and query != "": 
+        cosine_similarity= (query_sim+reviews_similarities)/2
+    if review != "" and query =="": 
+        cosine_similarity= reviews_similarities
+    if review == "" and query !="": 
+        cosine_similarity=query_sim
+    else: 
+        cosine_similarity=query_sim
+    movie_scores = list(enumerate(cosine_similarity))
+    sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)[:20]
+    combined_scores = [(index,value, sentiment_scores[json_text[index]['title']]) for index,value in sorted_movie_scores]
+    combined_scores_sorted = (sorted(combined_scores, key=lambda x: x[2] , reverse=True))
+    filtered_movies = [json_text[int(index)] for index,first,second in combined_scores_sorted]
     return filtered_movies
-
-
-    # overviews=[]
-    # for movie in json_text: 
-    #     overviews.append(movie['overview'])
-    
-    # vocabulary = build_vocabulary(overviews + [query])
-    # movie_vectors = [vectorize(desc, vocabulary) for desc in overviews]
-    # user_vector = vectorize(query, vocabulary)
-    # similarities = {desc: cosine_similarity(user_vector, movie_vector) for desc, movie_vector in zip(overviews, movie_vectors)}
-    # sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
-    # print(len(sorted_similarities))
-    # top_50_percent = sorted_similarities[:len(sorted_similarities) // 2]
-    # print(len(top_50_percent))
-    # top_descriptions_set = set(desc for desc, _ in top_50_percent)
-    # filtered_movies = [movie for movie in json_text if movie["overview"] in top_descriptions_set]
-    # return filtered_movies
 
 @app.route('/genre_suggestions')
 def genre_suggestions():

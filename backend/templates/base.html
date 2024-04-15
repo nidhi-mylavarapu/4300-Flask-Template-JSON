@@ -28,6 +28,11 @@
                     <input placeholder="Input Query/Keywords" id="query-keywords">
                     <div id="suggestions-query" class="suggestions-dropdown"></div>
                 </div>
+                <div class="input-box" onclick="sendFocus()" style="position: relative;">
+                    <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                    <input placeholder="Input Query/REVIEW Keywords" id="query-keywords">
+                    <div id="suggestions-query" class="suggestions-dropdown"></div>
+                </div>
                 <button id="search-button" class="enter-btn" type="button">Enter</button>
             </div>
         </div>
@@ -45,21 +50,35 @@
 
 <script>
 
-    function answerBoxTemplate(title, titleDesc, popularity, poster_path) {
-        // const placeholderImage = '/static/images/sample_poster.png'; // Path to the placeholder image
-        const placeholderImage = 'https://image.tmdb.org/t/p/w185/vzmL6fP7aPKNKPRTFnZmiUfciyV.jpg'; // Path to the placeholder image
-        const baseUrl = 'http://image.tmdb.org/t/p/w185';
-        const fullImg = baseUrl + poster_path;
-        console.log(fullImg);
+    function answerBoxTemplate(title, titleDesc, popularity, image, reviews) {
+        const fullImg = image;
         return `<div class='answer-content'>
                 <div class='text-content'>
                     <h3 class='episode-title'>${title}</h3>
                     <p class='episode-desc'>${titleDesc}</p>
                     <p class='episode-rating'>Popularity: ${popularity}</p>
+                    <button onclick="toggleReviews(this)">Show/Hide Reviews</button>
+                    <div class='reviews-container' style='display: none;'>
+                        ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
+                    </div>
                 </div>
-                <img src='${placeholderImage}' alt='Movie Poster' class='movie-image'/>
+                <img src='${fullImg}' alt='Movie Poster' class='movie-image'/>
             </div>`;
     }
+
+    function toggleReviews(button) {
+        const reviewsContainer = button.nextElementSibling; // assuming the reviews container is right after the button
+        if (reviewsContainer.style.display === 'none') {
+            reviewsContainer.style.display = 'block';
+            button.textContent = 'Hide Reviews';
+        } else {
+            reviewsContainer.style.display = 'none';
+            button.textContent = 'Show Reviews';
+        }
+    }
+
+
+
 
     function sendFocus() {
         document.getElementById('filter-text-val').focus()
@@ -71,20 +90,18 @@
     document.getElementById('search-button').addEventListener('click', filterText);
 
     function filterText() {
-        document.getElementById("answer-box").innerHTML = ""
+        document.getElementById("answer-box").innerHTML = "";
         const searchText = document.getElementById("filter-text-val-liked").value;
         const queryText = document.getElementById("query-keywords").value;
         fetch("/episodes?" + new URLSearchParams({ title: searchText, query: queryText }).toString())
             .then((response) => response.json())
             .then((data) => data.forEach(row => {
-
-                let tempDiv = document.createElement("div")
-                console.log(row)
-                tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, row.popularity, row.poster_path);
-
-                document.getElementById("answer-box").appendChild(tempDiv)
+                let tempDiv = document.createElement("div");
+                console.log(row);  // This log helps you see the data structure in the console.
+                console.log(row.popularity);
+                tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.popularity), row.image, row.reviews);  // Pass reviews here.
+                document.getElementById("answer-box").appendChild(tempDiv);
             }));
-
     }
 
     document.querySelectorAll('.input-box input').forEach(input => {
