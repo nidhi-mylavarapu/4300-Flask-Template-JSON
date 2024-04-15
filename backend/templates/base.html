@@ -45,11 +45,11 @@
 
 <script>
 
-    function answerBoxTemplate(title, titleDesc, popularity, poster_path) {
+    function answerBoxTemplate(title, titleDesc, popularity, image) {
         // const placeholderImage = '/static/images/sample_poster.png'; // Path to the placeholder image
         const placeholderImage = 'https://image.tmdb.org/t/p/w185/vzmL6fP7aPKNKPRTFnZmiUfciyV.jpg'; // Path to the placeholder image
         const baseUrl = 'http://image.tmdb.org/t/p/w185';
-        const fullImg = baseUrl + poster_path;
+        const fullImg = image;
         console.log(fullImg);
         return `<div class='answer-content'>
                 <div class='text-content'>
