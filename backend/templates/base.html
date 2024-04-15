@@ -28,6 +28,11 @@
                     <input placeholder="Input Query/Keywords" id="query-keywords">
                     <div id="suggestions-query" class="suggestions-dropdown"></div>
                 </div>
+                <div class="input-box" onclick="sendFocus()" style="position: relative;">
+                    <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                    <input placeholder="Input Query/Keywords for what reviews you want for movie" id="review-keywords">
+                    <div id="review-query" class="suggestions-dropdown"></div>
+                </div>
                 <button id="search-button" class="enter-btn" type="button">Enter</button>
             </div>
         </div>
@@ -74,7 +79,8 @@
         document.getElementById("answer-box").innerHTML = ""
         const searchText = document.getElementById("filter-text-val-liked").value;
         const queryText = document.getElementById("query-keywords").value;
-        fetch("/episodes?" + new URLSearchParams({ title: searchText, query: queryText }).toString())
+        const reviewText = document.getElementById("review-keywords").value;
+        fetch("/episodes?" + new URLSearchParams({ title: searchText, query: queryText, review: reviewText }).toString())
             .then((response) => response.json())
             .then((data) => data.forEach(row => {
 

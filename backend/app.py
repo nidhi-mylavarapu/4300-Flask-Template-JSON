@@ -139,14 +139,20 @@ def classify_and_score_reviews(json_data):
 def home():
     return render_template('base.html',title="sample html")
 
+def compute_cosine_similarities(texts):
+    vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = vectorizer.fit_transform(texts)
+    cosine_similarities = linear_kernel(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
+    return cosine_similarities
+
+
 @app.route("/episodes")
 def episodes_search():
     text = request.args.get("title")
     query= request.args.get("query")
+    review=request.args.get("review")
+    print("Reivew", review)
     movies_df = pd.read_json('init.json')
-    # if 'reviews' not in movies_df.columns:
-    #     movies_df['reviews'] = [[] for _ in range(len(movies_df))]
-
 
     pure_json= filter_movies_by_genre(text)
     json_text= json.loads(pure_json)
@@ -154,16 +160,22 @@ def episodes_search():
 
     overviews = [overview['overview'] if overview['overview'] is not None else "" for overview in json_text]
     texts = overviews + ([query] if query is not None else [''])
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform(texts)
-    cosine_similarities = linear_kernel(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
-    movie_scores = list(enumerate(cosine_similarities))
+    query_sim= compute_cosine_similarities(texts)
+    reviews= [str(text['reviews']) if text['reviews'] is not None else "" for text in json_text]
+    review_text= reviews+([review] if review is not None else [''])
+    reviews_similarities=compute_cosine_similarities(review_text)
+    cosine_similarity=None
+    if review != "" and query != "": 
+        cosine_similarity= (query_sim+reviews_similarities)/2
+    if review != "" and query =="": 
+        cosine_similarity= reviews_similarities
+    if review == "" and query !="": 
+        cosine_similarity=query_sim
+    else: 
+        cosine_similarity=query_sim
+    movie_scores = list(enumerate(cosine_similarity))
     sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)[:20]
-
-    # combined_scores = [(i,cosine_similarities[i], sentiment_scores[json_text[i]['title']]) for i in range(len(json_text))]
     combined_scores = [(index,value, sentiment_scores[json_text[index]['title']]) for index,value in sorted_movie_scores]
-
-
     combined_scores_sorted = (sorted(combined_scores, key=lambda x: x[2] , reverse=True))
     filtered_movies = [json_text[int(index)] for index,first,second in combined_scores_sorted]
     return filtered_movies
