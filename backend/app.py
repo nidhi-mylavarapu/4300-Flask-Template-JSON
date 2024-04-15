@@ -7,6 +7,13 @@ import pandas as pd
 import ast
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import classification_report
+
+
 
 # ROOT_PATH for linking with all your files.
 # Feel free to use a config.py or settings.py with a global export variable
@@ -37,7 +44,7 @@ def json_search(query):
     # matches_filtered_json = matches_filtered.to_json(orient='records')
     # return matches_filtered_json
     matches = movies_df[movies_df['title'].str.lower().str.contains(query.lower()) | movies_df['original_title'].str.lower().str.contains(query.lower())]
-    matches_filtered = matches[['title', 'overview', 'vote_average']]  # Adjusted to match relevant fields in the new JSON
+    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews']]  # Adjusted to match relevant fields in the new JSON
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 def genre_search(genre): 
@@ -108,6 +115,28 @@ def genresuggests(genre):
     return jsonify(list(genres))
 
 
+train_data = pd.read_csv('train.tsv.zip', sep='\t')
+train_data['full_sentence'] = train_data.groupby('SentenceId')['Phrase'].transform(lambda x: ' '.join(x))
+train_data = train_data.drop_duplicates('SentenceId').reset_index(drop=True)
+
+model = make_pipeline(TfidfVectorizer(stop_words='english'), MultinomialNB())
+model.fit(train_data['full_sentence'], train_data['Sentiment'])
+
+def classify_and_score_reviews(movies_df):
+    results = []
+    for index, row in movies_df.iterrows():
+        movie_reviews = row['reviews']
+        if movie_reviews:
+            sentiments = model.predict(movie_reviews)
+            if sentiments.size > 0:
+                average_sentiment = sentiments.mean()
+                results.append((row['title'], average_sentiment))
+            else:
+                results.append((row['title'], None))
+        else:
+            results.append((row['title'], None))
+    return dict(results)
+
 
 @app.route("/")
 def home():
@@ -118,7 +147,16 @@ def episodes_search():
     text = request.args.get("title")
     query= request.args.get("query")
     print("before")
+    movies_df = pd.read_json('init.json')
+    if 'reviews' not in movies_df.columns:
+        movies_df['reviews'] = [[] for _ in range(len(movies_df))]
+
+    sentiment_scores = classify_and_score_reviews(movies_df)
+
+
     json_text= json.loads((filter_movies_by_genre(text)))
+    if 'reviews' not in movies_df.columns:
+        movies_df['reviews'] = [[] for _ in range(len(movies_df))]
     overviews = [overview['overview'] if overview['overview'] is not None else "" for overview in json_text]
     texts = overviews + ([query] if query is not None else [''])
     vectorizer = TfidfVectorizer(stop_words='english')
@@ -126,8 +164,15 @@ def episodes_search():
     cosine_similarities = linear_kernel(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
     movie_scores = list(enumerate(cosine_similarities))
     sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)
-    top_half_movie_indices = [index for index, score in sorted_movie_scores[:len(sorted_movie_scores) // 2]]
-    filtered_movies = [json_text[index] for index in top_half_movie_indices]
+    # top_half_movie_indices = [index for index, score in sorted_movie_scores[:len(sorted_movie_scores) // 2]]
+    # filtered_movies = [json_text[index] for index in top_half_movie_indices]
+
+    combined_scores = [(cosine_similarities[i], sentiment_scores[movies_df.iloc[i]['title']]) for i in range(len(movies_df))]
+
+    combined_scores_sorted = sorted(combined_scores, key=lambda x: (x[0] + (x[1] if x[1] is not None else 0)), reverse=True)
+    top_half_indices = [index for index, score in combined_scores_sorted[:len(combined_scores_sorted) // 2]]
+
+    filtered_movies = [json_text[index] for index in top_half_indices]
     return filtered_movies
 
 
