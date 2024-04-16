@@ -22,7 +22,8 @@ with open('init.json', 'r') as file:
             if item['title'] is not None and item['title'] in item1[0]:
                 csv_file_path = os.path.join(directory, item1[1])
                 df = pd.read_csv(csv_file_path)
-                reviews = df['review'].head(10).tolist()
+                df_sorted= df.sort_values(by='helpful', ascending=False)
+                reviews = df_sorted['review'].head(10).tolist()
                 item['reviews'] = reviews
                 print(item['title'])
                 print(reviews)
