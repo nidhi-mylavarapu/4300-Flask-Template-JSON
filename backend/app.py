@@ -39,7 +39,7 @@ CORS(app)
 # Sample search using json with pandas
 def json_search(query):
     matches = movies_df[movies_df['title'].str.lower().str.contains(query.lower()) | movies_df['original_title'].str.lower().str.contains(query.lower())]
-    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews']]  # Adjusted to match relevant fields in the new JSON
+    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews','image','popularity']]  # Adjusted to match relevant fields in the new JSON
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 def genre_search(genre): 
@@ -59,7 +59,7 @@ def filter_movies_by_genre(genre):
         return False
 
     matches = movies_df[movies_df['genres'].apply(lambda g: is_genre_present(g, genre))]
-    matches_filtered = matches[['title', 'overview', 'vote_average','reviews']]    
+    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews','image','popularity']]  
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 
