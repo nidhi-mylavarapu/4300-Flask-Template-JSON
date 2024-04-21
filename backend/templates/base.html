@@ -41,13 +41,13 @@
 
 <script>
 
-    function answerBoxTemplate(title, titleDesc, voter_average, image, reviews) {
+    function answerBoxTemplate(title, titleDesc, vote_average, image, reviews) {
         const fullImg = image;
         return `<div class='answer-content'>
                 <div class='text-content'>
                     <h3 class='episode-title'>${title}</h3>
                     <p class='episode-desc'>${titleDesc}</p>
-                    <p class='episode-rating'>Popularity: ${voter_average}</p>
+                    <p class='episode-rating'>Popularity: ${vote_average}</p>
                     <button onclick="toggleReviews(this)">Show/Hide Reviews</button>
                     <div class='reviews-container' style='display: none;'>
                         ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
@@ -89,8 +89,8 @@
             .then((data) => data.forEach(row => {
                 let tempDiv = document.createElement("div");
                 console.log(row);  // This log helps you see the data structure in the console.
-                console.log(row.voter_average);
-                tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.voter_average), row.image, row.reviews);  // Pass reviews here.
+                console.log(row.vote_average);
+                tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews);  // Pass reviews here.
                 document.getElementById("answer-box").appendChild(tempDiv);
             }));
     }
