@@ -256,7 +256,7 @@ input[type=range]::-moz-range-thumb {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* width: 50%; */
+
 }
 
 .suggestions-dropdown div:hover {
@@ -268,7 +268,7 @@ input[type=range]::-moz-range-thumb {
     font-size: 16px;
     color: white;
     background-color: #edd014;
-    /* Blue shade */
+
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -278,17 +278,15 @@ input[type=range]::-moz-range-thumb {
 
 .button-style:hover {
     background-color: #f4ea8a;
-    /* Darker blue */
+
     transform: scale(1.05);
 }
 
 .button-style:focus {
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5);
-    /* Blue glow */
 }
 
 .button-style:active {
     background-color: #f4ecb6;
-    /* Even darker blue */
     transform: scale(0.95);
 }
