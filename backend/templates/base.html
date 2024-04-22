@@ -32,10 +32,15 @@
             </div>
         </div>
 
+        <div id="loading-icon" style="display: none;">
+            <div class="spinner"></div>
+        </div>
 
         <div id="answer-box">
 
         </div>
+
+
     </div>
 </body>
 
@@ -48,7 +53,7 @@
                     <h3 class='episode-title'>${title}</h3>
                     <p class='episode-desc'>${titleDesc}</p>
                     <p class='episode-rating'>Popularity: ${vote_average}</p>
-                    <button onclick="toggleReviews(this)">Show/Hide Reviews</button>
+                    <button onclick="toggleReviews(this)" class="button-style">Show/Hide Reviews</button>
                     <div class='reviews-container' style='display: none;'>
                         ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
                     </div>
@@ -81,18 +86,27 @@
     document.getElementById('search-button').addEventListener('click', filterText);
 
     function filterText() {
-        document.getElementById("answer-box").innerHTML = "";
+        document.getElementById('answer-box').innerHTML = ""; // Clear previous results
+        document.getElementById('loading-icon').style.display = 'block'; // Show the loading icon
+
         const searchText = document.getElementById("filter-text-val-liked").value;
         const queryText = document.getElementById("query-keywords").value;
         fetch("/episodes?" + new URLSearchParams({ title: searchText, query: queryText }).toString())
             .then((response) => response.json())
-            .then((data) => data.forEach(row => {
-                let tempDiv = document.createElement("div");
-                console.log(row);  // This log helps you see the data structure in the console.
-                console.log(row.vote_average);
-                tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews);  // Pass reviews here.
-                document.getElementById("answer-box").appendChild(tempDiv);
-            }));
+            .then((data) => {
+                // Process each item in the response
+                data.forEach(row => {
+                    let tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews);
+                    document.getElementById("answer-box").appendChild(tempDiv);
+                });
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('loading-icon').style.display = 'none'; // Hide the loading icon
+            });
     }
 
     document.querySelectorAll('.input-box input').forEach(input => {
