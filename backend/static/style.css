@@ -264,10 +264,12 @@ input[type=range]::-moz-range-thumb {
 }
 
 /* Base styles for sentiment buttons with dynamic color changes */
-.sentiment-button {
+.sentiment-button-highly-rated {
     padding: 8px 16px;
     font-size: 16px;
-    color: white;
+    color: black;
+    background-color: #4CAF50;
+    width: 150px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -275,26 +277,113 @@ input[type=range]::-moz-range-thumb {
     transition: background-color 0.3s, transform 0.2s;
 }
 
-/* Specific styles for different sentiment levels */
-.highly-rated { background-color: #4CAF50; } /* Bright green */
-.well-rated { background-color: #8BC34A; } /* Neutral green */
-.fairly-rated { background-color: #FFEB3B; } /* Yellow */
-.poorly-rated { background-color: #FFC107; } /* Neutral red */
-.low-rated { background-color: #F44336; } /* Dark red */
-
-/* Hover effect to show score */
-.sentiment-button:hover {
-    transform: scale(1.05); /* Slightly increase size on hover */
+.sentiment-button-well-rated {
+    padding: 8px 16px;
+    font-size: 16px;
+    color: black;
+    background-color: #8BC34A;
+    width: 150px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
-/* Active state for the button */
-.sentiment-button:active {
-    transform: scale(0.95); /* Slightly decrease size when pressed */
+.sentiment-button-fairly-rated {
+    padding: 8px 16px;
+    font-size: 16px;
+    color: black;
+    background-color: #FFEB3B;
+    width: 150px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s, transform 0.2s;
 }
+
+.sentiment-button-poorly-rated {
+    padding: 8px 16px;
+    font-size: 16px;
+    color: black;
+    background-color: #FFC107;
+    width: 150px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.sentiment-button-low-rated {
+    padding: 8px 16px;
+    font-size: 16px;
+    color: black;
+    background-color: #F44336;
+    width: 150px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.sentiment-button-highly-rated:hover {
+    transform: scale(1.05);
+    font-size: 10px;
+}
+
+.sentiment-button-highly-rated:active {
+    transform: scale(0.95);
+}
+
+
+.sentiment-button-well-rated:hover {
+    transform: scale(1.05);
+    font-size: 10px;
+}
+
+.sentiment-button-well-rated:active {
+    transform: scale(0.95);
+}
+
+
+.sentiment-button-fairly-rated:hover {
+    transform: scale(1.05);
+    font-size: 10px;
+}
+
+.sentiment-button-fairly-rated:active {
+    transform: scale(0.95);
+}
+
+
+.sentiment-button-low-rated:hover {
+    transform: scale(1.05);
+    font-size: 10px;
+}
+
+.sentiment-button-low-rated:active {
+    transform: scale(0.95);
+}
+
+
+.sentiment-button-poorly-rated:hover {
+    transform: scale(1.05);
+    font-size: 10px;
+}
+
+.sentiment-button-poorly-rated:active {
+    transform: scale(0.95);
+}
+
+
 
 /* Focus state for accessibility */
 .sentiment-button:focus {
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5); /* Blue outline when focused */
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5);
+    /* Blue outline when focused */
 }
 
 
