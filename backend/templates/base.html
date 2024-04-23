@@ -46,21 +46,24 @@
 
 <script>
 
-    function answerBoxTemplate(title, titleDesc, vote_average, image, reviews) {
+    function answerBoxTemplate(title, titleDesc, vote_average, image, reviews, sentimentScore) {
         const fullImg = image;
+        let sentimentDisplay = sentimentScore ? `Sentiment Score: ${sentimentScore.toFixed(2)}` : 'Sentiment Score: N/A';
         return `<div class='answer-content'>
-                <div class='text-content'>
-                    <h3 class='episode-title'>${title}</h3>
-                    <p class='episode-desc'>${titleDesc}</p>
-                    <p class='episode-rating'>Popularity: ${vote_average}</p>
-                    <button onclick="toggleReviews(this)" class="button-style">Show/Hide Reviews</button>
-                    <div class='reviews-container' style='display: none;'>
-                        ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
+                    <div class='text-content'>
+                        <h3 class='episode-title'>${title}</h3>
+                        <p class='episode-desc'>${titleDesc}</p>
+                        <p class='episode-rating'>Popularity: ${vote_average}</p>
+                        <p class='sentiment-score'>${sentimentDisplay}</p>
+                        <button onclick="toggleReviews(this)" class="button-style">Show/Hide Reviews</button>
+                        <div class='reviews-container' style='display: none;'>
+                            ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
+                        </div>
                     </div>
-                </div>
-                <img src='${fullImg}' alt='Movie Poster' class='movie-image'/>
-            </div>`;
+                    <img src='${fullImg}' alt='Movie Poster' class='movie-image'/>
+                </div>`;
     }
+
 
     function toggleReviews(button) {
         const reviewsContainer = button.nextElementSibling; // assuming the reviews container is right after the button
@@ -97,7 +100,7 @@
                 // Process each item in the response
                 data.forEach(row => {
                     let tempDiv = document.createElement("div");
-                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews);
+                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews, row.sentiment_score);
                     document.getElementById("answer-box").appendChild(tempDiv);
                 });
             })
@@ -108,6 +111,7 @@
                 document.getElementById('loading-icon').style.display = 'none'; // Hide the loading icon
             });
     }
+
 
     document.querySelectorAll('.input-box input').forEach(input => {
         input.addEventListener('blur', function (event) {

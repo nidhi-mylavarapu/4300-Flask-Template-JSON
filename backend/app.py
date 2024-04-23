@@ -42,9 +42,9 @@ def json_search(query):
     matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews','image']]  # Adjusted to match relevant fields in the new JSON
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
-def genre_search(genre): 
+def genre_search(genre):
     matches = movies_df[movies_df['genres'].apply(lambda g: genre.lower() in (genre_name.lower() for genre_name in g))]
-    matches_filtered = matches[['title', 'overview', 'vote_average']]    
+    matches_filtered = matches[['title', 'overview', 'vote_average']]
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 def filter_movies_by_genre(genre):
@@ -59,23 +59,23 @@ def filter_movies_by_genre(genre):
         return False
 
     matches = movies_df[movies_df['genres'].apply(lambda g: is_genre_present(g, genre))]
-    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews','image']]  
+    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews','image']]
     matches_filtered_json = matches_filtered.to_json(orient='records')
     return matches_filtered_json
 
 import math
 def compute_similarities(overviews, query):
-    combined_texts = overviews + [query]    
+    combined_texts = overviews + [query]
     vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform(combined_texts)    
-    cosine_similarities = linear_kernel(tfidf_matrix[-1], tfidf_matrix[:-1]).flatten()    
+    tfidf_matrix = vectorizer.fit_transform(combined_texts)
+    cosine_similarities = linear_kernel(tfidf_matrix[-1], tfidf_matrix[:-1]).flatten()
     similarity_scores = [(score, idx) for idx, score in enumerate(cosine_similarities)]
     similarity_scores = sorted(similarity_scores, reverse=True)
-    top_matches = similarity_scores[:50]  
+    top_matches = similarity_scores[:50]
     return top_matches
 
 def tokenize(text):
-    if text is None: 
+    if text is None:
         return ""
     return text.lower().split()
 
@@ -97,9 +97,9 @@ def cosine_similarity(vec1, vec2):
     magnitude1 = math.sqrt(sum(v**2 for v in vec1))
     magnitude2 = math.sqrt(sum(v**2 for v in vec2))
     if magnitude1 == 0 or magnitude2 == 0:
-        return 0  
+        return 0
     return dot_product / (magnitude1 * magnitude2)
-def genresuggests(genre): 
+def genresuggests(genre):
     genres = set()
     for item in data:
         genre_list = json.loads(item['genres'].replace("'", "\""))
@@ -131,7 +131,7 @@ def classify_and_score_reviews(json_data):
                 results.append((row['title'], None))
         else:
             results.append((row['title'], None))
-            
+
     return dict(results)
 
 
@@ -149,36 +149,44 @@ def compute_cosine_similarities(texts):
 @app.route("/episodes")
 def episodes_search():
     text = request.args.get("title")
-    query= request.args.get("query")
-    review=request.args.get("review")
-    print("Reivew", review)
-    movies_df = pd.read_json('init.json')
+    query = request.args.get("query")
+    review = request.args.get("review")
 
-    pure_json= filter_movies_by_genre(text)
-    json_text= json.loads(pure_json)
+    pure_json = filter_movies_by_genre(text)
+    json_text = json.loads(pure_json)
     sentiment_scores = classify_and_score_reviews(pure_json)
 
     overviews = [overview['overview'] if overview['overview'] is not None else "" for overview in json_text]
     texts = overviews + ([query] if query is not None else [''])
-    query_sim= compute_cosine_similarities(texts)
-    reviews= [str(text['reviews']) if text['reviews'] is not None else "" for text in json_text]
-    review_text= reviews+([review] if review is not None else [''])
-    reviews_similarities=compute_cosine_similarities(review_text)
-    cosine_similarity=None
-    if review != "" and query != "": 
-        cosine_similarity= (query_sim+reviews_similarities)/2
-    if review != "" and query =="": 
-        cosine_similarity= reviews_similarities
-    if review == "" and query !="": 
-        cosine_similarity=query_sim
-    else: 
-        cosine_similarity=query_sim
+    query_sim = compute_cosine_similarities(texts)
+
+    reviews = [str(text['reviews']) if text['reviews'] is not None else "" for text in json_text]
+    review_text = reviews + ([review] if review is not None else [''])
+    reviews_similarities = compute_cosine_similarities(review_text)
+
+    cosine_similarity = None
+    if review != "" and query != "":
+        cosine_similarity = (query_sim + reviews_similarities) / 2
+    elif review != "" and query == "":
+        cosine_similarity = reviews_similarities
+    elif review == "" and query != "":
+        cosine_similarity = query_sim
+    else:
+        cosine_similarity = query_sim
+
     movie_scores = list(enumerate(cosine_similarity))
     sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)[:20]
-    combined_scores = [(index,value, sentiment_scores[json_text[index]['title']]) for index,value in sorted_movie_scores]
-    combined_scores_sorted = (sorted(combined_scores, key=lambda x: x[2] , reverse=True))
-    filtered_movies = [json_text[int(index)] for index,first,second in combined_scores_sorted]
-    return filtered_movies
+    combined_scores = [(index, value, sentiment_scores[json_text[index]['title']]) for index, value in sorted_movie_scores]
+    combined_scores_sorted = sorted(combined_scores, key=lambda x: x[2], reverse=True)
+
+    filtered_movies = [{"title": json_text[int(index)]['title'],
+                        "overview": json_text[int(index)]['overview'],
+                        "vote_average": json_text[int(index)]['vote_average'],
+                        "reviews": json_text[int(index)]['reviews'],
+                        "image": json_text[int(index)]['image'],
+                        "sentiment_score": sentiment} for index, _, sentiment in combined_scores_sorted]
+
+    return jsonify(filtered_movies)
 
 @app.route('/genre_suggestions')
 def genre_suggestions():
