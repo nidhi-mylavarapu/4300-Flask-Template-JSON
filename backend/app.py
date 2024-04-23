@@ -57,11 +57,25 @@ def filter_movies_by_genre(genre):
         except ValueError:
             return False
         return False
-
-    matches = movies_df[movies_df['genres'].apply(lambda g: is_genre_present(g, genre))]
-    matches_filtered = matches[['title', 'overview', 'vote_average', 'reviews','image']]
-    matches_filtered_json = matches_filtered.to_json(orient='records')
-    return matches_filtered_json
+    items_list = genre.split(", ")
+    matching_rows = []
+    maxNum = 0
+    for index, row in movies_df.iterrows():
+        count = 0
+        dicOfGenres = ast.literal_eval(row['genres'])
+        for item in dicOfGenres:
+            if item['name'] in items_list:
+                count+=1
+        if count >= maxNum:
+            maxNum = count
+            matching_rows.insert(0, row.to_dict())
+        elif count == 1:
+            matching_rows.append(row.to_dict())
+    df = pd.DataFrame(matching_rows)
+    df_selected = df[['title', 'overview', 'vote_average', 'reviews','image']]
+    print(df_selected)
+    json_str = df_selected.to_json(orient='records')
+    return json_str
 
 import math
 def compute_similarities(overviews, query):

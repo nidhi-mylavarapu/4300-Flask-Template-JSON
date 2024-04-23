@@ -121,39 +121,42 @@
         });
     });
 
-    function selectGenre(value, dropdownId) {
-        document.getElementById(dropdownId.replace('suggestions-', 'filter-text-val-')).value = value;
-        document.getElementById(dropdownId).style.display = 'none';
-    }
+    function selectGenre(pastString, value, dropdownId) {
+    const newValue = pastString ? `${pastString}, ${value}` : value;
+    const inputId = dropdownId.replace('suggestions-', 'filter-text-val-');
+    document.getElementById(inputId).value = newValue;
+    document.getElementById(dropdownId).style.display = 'none';
+}
 
-    function showSuggestions(value, dropdownId) {
-        if (value.length === 0) {
-            document.getElementById(dropdownId).innerHTML = '';
-            document.getElementById(dropdownId).style.display = 'none';
+    function showSuggestions1(value, dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        console.log('hi');
+        console.log(value);
+        const parts = value.split(',').map(part => part.trim()); 
+        console.log(parts);// Trimming extra spaces
+        const allExceptLast = parts.slice(0, -1); 
+        const lastPart = parts[parts.length - 1]; // Get the segment after the last comma
+
+        if (lastPart.length === 0) {
+            // If the last part is empty, clear the dropdown and hide it
+            dropdown.innerHTML = '';
+            dropdown.style.display = 'none';
             return;
         }
 
-        fetch("/genre_suggestions?" + new URLSearchParams({ query: value }).toString())
+        fetch("/genre_suggestions?" + new URLSearchParams({ query: lastPart }).toString())
             .then(response => response.json())
             .then(data => {
                 let suggestions = data.map(genre => {
-                    return `<div onclick="event.stopPropagation(); selectGenre('${genre}', '${dropdownId}')">${genre}</div>`;
+                    return `<div onclick="event.stopPropagation(); selectGenre('${allExceptLast}', '${genre}', '${dropdownId}')">${genre}</div>`;
                 }).join('');
                 document.getElementById(dropdownId).innerHTML = suggestions;
                 document.getElementById(dropdownId).style.display = 'block';
             })
             .catch((error) => {
-                console.error('Error:', error);
+                console.error('Error fetching suggestions:', error);
             });
     }
-
-    document.getElementById('filter-text-val-liked').addEventListener('input', function () {
-        showSuggestions(this.value, 'suggestions-liked');
-    });
-
-    document.getElementById('filter-text-val-disliked').addEventListener('input', function () {
-        showSuggestions(this.value, 'suggestions-disliked');
-    });
 
     document.addEventListener('DOMContentLoaded', (event) => {
         document.addEventListener('click', function (e) {
@@ -163,7 +166,9 @@
         });
 
         document.getElementById('filter-text-val-liked').addEventListener('input', function () {
+            console.log(this.value)
             showSuggestions(this.value, 'suggestions-liked');
+            showSuggestions1(this.value, 'suggestions-liked');
         });
 
         document.getElementById('filter-text-val-disliked').addEventListener('input', function () {
@@ -178,6 +183,7 @@
 
         function showSuggestions(value, dropdownId) {
             const dropdown = document.getElementById(dropdownId);
+            
             if (value.length > 0) {
                 dropdown.innerHTML = '<div></div>';
                 dropdown.style.display = 'block';
