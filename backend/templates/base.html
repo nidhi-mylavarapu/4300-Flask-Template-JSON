@@ -46,15 +46,31 @@
 
 <script>
 
+    function getSentimentLabel(sentimentScore) {
+        if (sentimentScore >= 2.4) {
+            return { label: 'Highly Rated', className: 'highly-rated' };
+        } else if (sentimentScore >= 1.8) {
+            return { label: 'Well Rated', className: 'well-rated' };
+        } else if (sentimentScore >= 1.2) {
+            return { label: 'Fairly Rated', className: 'fairly-rated' };
+        } else if (sentimentScore >= 0.6) {
+            return { label: 'Poorly Rated', className: 'poorly-rated' };
+        } else {
+            return { label: 'Low Rated', className: 'low-rated' };
+        }
+    }
+
     function answerBoxTemplate(title, titleDesc, vote_average, image, reviews, sentimentScore) {
         const fullImg = image;
-        let sentimentDisplay = sentimentScore ? `Sentiment Score: ${sentimentScore.toFixed(2)}` : 'Sentiment Score: N/A';
+        const sentimentInfo = getSentimentLabel(parseFloat(sentimentScore));
+        const sentimentDisplay = sentimentScore ? `Sentiment Score: ${sentimentScore.toFixed(2)}` : 'Sentiment Score: N/A';
+        console.log('Applying class:', sentimentInfo.className); // This will show which class is being applied
         return `<div class='answer-content'>
                     <div class='text-content'>
                         <h3 class='episode-title'>${title}</h3>
                         <p class='episode-desc'>${titleDesc}</p>
                         <p class='episode-rating'>Popularity: ${vote_average}</p>
-                        <p class='sentiment-score'>${sentimentDisplay}</p>
+                        <button class='sentiment-button button-style ${sentimentInfo.className}' onmouseover="this.innerText='${sentimentDisplay}'" onmouseout="this.innerText='${sentimentInfo.label}'" title='${sentimentDisplay}'>${sentimentInfo.label}</button>
                         <button onclick="toggleReviews(this)" class="button-style">Show/Hide Reviews</button>
                         <div class='reviews-container' style='display: none;'>
                             ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
@@ -63,6 +79,7 @@
                     <img src='${fullImg}' alt='Movie Poster' class='movie-image'/>
                 </div>`;
     }
+
 
 
     function toggleReviews(button) {
@@ -122,19 +139,19 @@
     });
 
     function selectGenre(pastString, value, dropdownId) {
-    const newValue = pastString ? `${pastString}, ${value}` : value;
-    const inputId = dropdownId.replace('suggestions-', 'filter-text-val-');
-    document.getElementById(inputId).value = newValue;
-    document.getElementById(dropdownId).style.display = 'none';
-}
+        const newValue = pastString ? `${pastString}, ${value}` : value;
+        const inputId = dropdownId.replace('suggestions-', 'filter-text-val-');
+        document.getElementById(inputId).value = newValue;
+        document.getElementById(dropdownId).style.display = 'none';
+    }
 
     function showSuggestions1(value, dropdownId) {
         const dropdown = document.getElementById(dropdownId);
         console.log('hi');
         console.log(value);
-        const parts = value.split(',').map(part => part.trim()); 
+        const parts = value.split(',').map(part => part.trim());
         console.log(parts);// Trimming extra spaces
-        const allExceptLast = parts.slice(0, -1); 
+        const allExceptLast = parts.slice(0, -1);
         const lastPart = parts[parts.length - 1]; // Get the segment after the last comma
 
         if (lastPart.length === 0) {
@@ -183,7 +200,7 @@
 
         function showSuggestions(value, dropdownId) {
             const dropdown = document.getElementById(dropdownId);
-            
+
             if (value.length > 0) {
                 dropdown.innerHTML = '<div></div>';
                 dropdown.style.display = 'block';
