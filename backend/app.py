@@ -68,12 +68,15 @@ def filter_movies_by_genre(genre):
                 count+=1
         if count >= maxNum:
             maxNum = count
-            matching_rows.insert(0, row.to_dict())
-        elif count == 1:
-            matching_rows.append(row.to_dict())
+            insRow = row.to_dict()
+            insRow['counts'] = count
+            matching_rows.insert(0, insRow)
+        elif count < maxNum:
+            insRow = row.to_dict()
+            insRow['counts'] = count
+            matching_rows.append(insRow)
     df = pd.DataFrame(matching_rows)
     df_selected = df[['title', 'overview', 'vote_average', 'reviews','image']]
-    print(df_selected)
     json_str = df_selected.to_json(orient='records')
     return json_str
 
@@ -165,6 +168,7 @@ def episodes_search():
     text = request.args.get("title")
     query = request.args.get("query")
     review = request.args.get("review")
+    min_popularity = float(request.args.get("min_popularity", 0))  # Default to 0 if not provided
 
     pure_json = filter_movies_by_genre(text)
     json_text = json.loads(pure_json)
@@ -199,6 +203,7 @@ def episodes_search():
                         "reviews": json_text[int(index)]['reviews'],
                         "image": json_text[int(index)]['image'],
                         "sentiment_score": sentiment} for index, _, sentiment in combined_scores_sorted]
+    filtered_movies = [movie for movie in filtered_movies if float(movie['vote_average']) >= min_popularity]
 
     return jsonify(filtered_movies)
 
