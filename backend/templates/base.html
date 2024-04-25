@@ -79,8 +79,8 @@
                         <button class='sentiment-button-${sentimentInfo.className}' onmouseover="this.innerText='${sentimentDisplay}'" onmouseout="this.innerText='${sentimentInfo.label}'" title='${sentimentDisplay}'>${sentimentInfo.label}</button>
                         <button onclick="toggleReviews(this)" class="button-style">Show/Hide Reviews</button>
                         <div class='reviews-container' style='display: none;'>
-                            ${reviews.map(review => `<p>${review.replace(/<br\/><br\/>/g, "</p><p>")}</p>`).join('')}
-                        </div>
+                        ${reviews.map(review => `<p>${review}</p><hr>`).join('')}
+                    </div>
                     </div>
                     <img src='${fullImg}' alt='Movie Poster' class='movie-image'/>
                 </div>`;
