@@ -18,6 +18,33 @@ html {
     min-height: 500px;
 }
 
+.sentiment-button-very-similar {
+    padding: 8px 16px;
+    font-size: 16px;
+    color: black;
+    background-color: #3498db;
+    /* This color is a nice shade of blue */
+    width: 150px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.sentiment-button-very-similar:hover {
+    transform: scale(1.05);
+    background-color: #2980b9;
+    /* Darker blue for hover effect */
+}
+
+.sentiment-button-very-similar:active {
+    transform: scale(0.95);
+    background-color: #2471a3;
+    /* Even darker blue for active state */
+}
+
+
 #google-4 {
     color: #F4B400;
 }
