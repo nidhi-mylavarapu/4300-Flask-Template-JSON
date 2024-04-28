@@ -57,7 +57,7 @@ def filter_movies_by_genre(genre):
         except ValueError:
             return False
         return False
-    items_list = genre.split(", ")
+    items_list = genre.split(",")
     matching_rows = []
     maxNum = 0
     for index, row in movies_df.iterrows():
@@ -66,17 +66,12 @@ def filter_movies_by_genre(genre):
         for item in dicOfGenres:
             if item['name'] in items_list:
                 count+=1
-        if count >= maxNum:
-            maxNum = count
-            insRow = row.to_dict()
-            insRow['counts'] = count
-            matching_rows.insert(0, insRow)
-        elif count < maxNum:
-            insRow = row.to_dict()
-            insRow['counts'] = count
-            matching_rows.append(insRow)
+    
+        insRow = row.to_dict()
+        insRow['counts'] = count
+        matching_rows.append(insRow)
     df = pd.DataFrame(matching_rows)
-    df_selected = df[['title', 'overview', 'vote_average', 'reviews','image']]
+    df_selected = df[['title', 'overview', 'vote_average', 'reviews','image','counts']]
     json_str = df_selected.to_json(orient='records')
     return json_str
 
@@ -196,15 +191,16 @@ def episodes_search():
     sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)[:20]
     combined_scores = [(index, value, sentiment_scores[json_text[index]['title']]) for index, value in sorted_movie_scores]
     combined_scores_sorted = sorted(combined_scores, key=lambda x: x[2], reverse=True)
-
+    first_values = [x[0] for x in combined_scores_sorted[:5]]
+    final_sorted= sorted(combined_scores_sorted, key = lambda x: json_text[(int(x[0]))]['counts'] )
     filtered_movies = [{"title": json_text[int(index)]['title'],
                         "overview": json_text[int(index)]['overview'],
                         "vote_average": json_text[int(index)]['vote_average'],
                         "reviews": json_text[int(index)]['reviews'],
                         "image": json_text[int(index)]['image'],
-                        "sentiment_score": sentiment} for index, _, sentiment in combined_scores_sorted]
+                        "similair": int(index) in first_values, 
+                        "sentiment_score": sentiment} for index, _, sentiment in final_sorted]
     filtered_movies = [movie for movie in filtered_movies if float(movie['vote_average']) >= min_popularity]
-
     return jsonify(filtered_movies)
 
 @app.route('/genre_suggestions')

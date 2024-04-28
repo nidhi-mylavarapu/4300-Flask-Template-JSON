@@ -66,11 +66,18 @@
         }
     }
 
-    function answerBoxTemplate(title, titleDesc, vote_average, image, reviews, sentimentScore) {
+    function answerBoxTemplate(title, titleDesc, vote_average, image, reviews, sentimentScore, similair) {
         const fullImg = image;
         const sentimentInfo = getSentimentLabel(parseFloat(sentimentScore));
         const sentimentDisplay = sentimentScore ? `Sentiment Score: ${sentimentScore.toFixed(2)}` : 'Sentiment Score: N/A';
-        console.log('Applying class:', sentimentInfo.className); // This will show which class is being applied
+        let similairBoxHTML = '';
+        if (similair) {
+            console.log("FLAG")
+            similairBoxHTML = `<div class='sentiment-button-highly-rated'>
+                             Very Similair to Query
+                           </div>`;
+        }
+        // console.log('Applying class:', sentimentInfo.className); // This will show which class is being applied
         return `<div class='answer-content'>
                     <div class='text-content'>
                         <h3 class='episode-title'>${title}</h3>
@@ -81,6 +88,8 @@
                         <div class='reviews-container' style='display: none;'>
                         ${reviews.map(review => `<p>${review}</p><hr>`).join('')}
                     </div>
+                    ${similairBoxHTML} 
+
                     </div>
                     <img src='${fullImg}' alt='Movie Poster' class='movie-image'/>
                 </div>`;
@@ -129,7 +138,7 @@
                 // Process each item in the response
                 data.forEach(row => {
                     let tempDiv = document.createElement("div");
-                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews, row.sentiment_score);
+                    tempDiv.innerHTML = answerBoxTemplate(row.title, row.overview, String(row.vote_average), row.image, row.reviews, row.sentiment_score, row.similair);
                     document.getElementById("answer-box").appendChild(tempDiv);
                 });
             })
