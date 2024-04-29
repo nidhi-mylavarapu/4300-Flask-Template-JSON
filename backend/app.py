@@ -59,6 +59,7 @@ def filter_movies_by_genre(genre):
         return False
     items_list = genre.split(",")
     matching_rows = []
+    maxNum = 0
     for index, row in movies_df.iterrows():
         count = 0
         dicOfGenres = ast.literal_eval(row['genres'])
