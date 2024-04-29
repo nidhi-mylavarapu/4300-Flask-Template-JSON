@@ -191,9 +191,15 @@ def episodes_search():
     movie_scores = list(enumerate(cosine_similarity))
     sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)[:20]
     combined_scores = [(index, value, sentiment_scores[json_text[index]['title']]) for index, value in sorted_movie_scores]
-    combined_scores_sorted = sorted(combined_scores, key=lambda x: x[2], reverse=True)
+    combined_scores_with_index = [(100-i, x) for i, x in enumerate(combined_scores)]
+
+    # combined_scores_sorted = sorted(combined_scores, key=lambda x: x[2], reverse=True)
     first_values = [x[0] for x in sorted_movie_scores[:5]]
-    final_sorted= sorted(combined_scores_sorted, key = lambda x: json_text[(int(x[0]))]['counts'] )
+    # final_sorted= sorted(combined_scores, key = lambda x: json_text[(int(x[0]))]['counts'] )
+    final_sorted = sorted(
+    combined_scores_with_index,
+    key=lambda x: (json_text[int(x[1][0])]['counts'], x[0]), reverse=True)
+    final_sorted = [x[1] for x in final_sorted]
     filtered_movies = [{"title": json_text[int(index)]['title'],
                         "overview": json_text[int(index)]['overview'],
                         "vote_average": json_text[int(index)]['vote_average'],
