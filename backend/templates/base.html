@@ -161,7 +161,7 @@
     });
 
     function selectGenre(pastString, value, dropdownId) {
-        const newValue = pastString ? `${pastString}, ${value}` : value;
+        const newValue = pastString ? `${pastString},${value}` : value;
         const inputId = dropdownId.replace('suggestions-', 'filter-text-val-');
         document.getElementById(inputId).value = newValue;
         document.getElementById(dropdownId).style.display = 'none';

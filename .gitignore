@@ -20,3 +20,5 @@ helpers/*
 json_template/
 
 python_env
+envi
+flask_env/
