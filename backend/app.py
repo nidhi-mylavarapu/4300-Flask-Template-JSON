@@ -58,6 +58,7 @@ def filter_movies_by_genre(genre):
             return False
         return False
     items_list = genre.split(",")
+    print("itemslist",items_list)
     matching_rows = []
     maxNum = 0
     for index, row in movies_df.iterrows():
@@ -191,7 +192,7 @@ def episodes_search():
     sorted_movie_scores = sorted(movie_scores, key=lambda x: x[1], reverse=True)[:20]
     combined_scores = [(index, value, sentiment_scores[json_text[index]['title']]) for index, value in sorted_movie_scores]
     combined_scores_sorted = sorted(combined_scores, key=lambda x: x[2], reverse=True)
-    first_values = [x[0] for x in combined_scores_sorted[:5]]
+    first_values = [x[0] for x in sorted_movie_scores[:5]]
     final_sorted= sorted(combined_scores_sorted, key = lambda x: json_text[(int(x[0]))]['counts'] )
     filtered_movies = [{"title": json_text[int(index)]['title'],
                         "overview": json_text[int(index)]['overview'],
