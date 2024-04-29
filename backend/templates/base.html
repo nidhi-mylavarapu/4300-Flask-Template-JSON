@@ -218,6 +218,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', (event) => {
+        showModal();
+
         document.addEventListener('click', function (e) {
             if (!e.target.matches('.input-box *')) {
                 hideAllSuggestions();
@@ -225,8 +227,6 @@
         });
 
         document.getElementById('filter-text-val-liked').addEventListener('input', function () {
-            console.log(this.value)
-            showSuggestions(this.value, 'suggestions-liked');
             showSuggestions1(this.value, 'suggestions-liked');
         });
 
@@ -240,6 +240,18 @@
             });
         }
 
+        // Function to show the modal
+        function showModal() {
+            var modal = document.getElementById('instructionModal');
+            modal.style.display = "block";
+        }
+
+        // Close modal when clicking on the close button
+        document.querySelector('.close').addEventListener('click', function () {
+            var modal = document.getElementById('instructionModal');
+            modal.style.display = "none";
+        });
+
         function showSuggestions(value, dropdownId) {
             const dropdown = document.getElementById(dropdownId);
 
@@ -251,6 +263,7 @@
             }
         }
     });
+
 
 </script>
 </body>
